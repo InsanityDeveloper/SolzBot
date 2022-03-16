@@ -14,6 +14,10 @@ repositories {
         name 'm2-dv8tion'
         url 'https://m2.dv8tion.net/releases'
     }
+    maven {
+        name 'jitpack'
+        url 'https://jitpack.io'
+    }
     mavenCentral()
 }
 
@@ -26,6 +30,12 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
 
     implementation 'com.google.code.gson:gson:2.9.0'
+
+    implementation 'org.xerial:sqlite-jdbc:3.36.0.3'
+    implementation 'ch.qos.logback:logback-classic:1.2.11'
+    implementation 'ch.qos.logback:logback-core:1.2.11'
+
+    implementation 'com.github.freya022:BotCommands:387d30bb53602bcc984107f2fd575b1f174097a0'
 }
 
 compileJava.options.encoding = 'UTF-8'
