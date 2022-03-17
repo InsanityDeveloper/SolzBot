@@ -3,6 +3,7 @@ package dev.ubujira.solzbot;
 import com.freya02.botcommands.api.CommandsBuilder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import dev.ubujira.solzbot.reactionroles.ReactionRoles;
 import dev.ubujira.solzbot.utils.Config;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
@@ -24,6 +25,9 @@ public class SolzBot {
 
     @Getter
     private JDA jda;
+
+    @Getter
+    private ReactionRoles reactionRoles;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -57,6 +61,8 @@ public class SolzBot {
             try {
                 commandsBuilder.build(jda, "dev.ubujira.solzbot.commands");
                 logger.info("Command system is setup!");
+
+                reactionRoles = new ReactionRoles();
             } catch (IOException e) {
                 logger.error("Failed to setup command system!", e);
             }

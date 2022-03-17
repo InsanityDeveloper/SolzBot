@@ -5,13 +5,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.vdurmont.emoji.EmojiManager;
 import dev.ubujira.solzbot.SolzBot;
+import dev.ubujira.solzbot.reactionroles.listeners.ReactionAddListener;
+import dev.ubujira.solzbot.reactionroles.listeners.ReactionRemoveListener;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Emoji;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +50,7 @@ public class ReactionRoles {
                 logger.error("Somehow couldn't find the file after checking if it exists??", e);
             }
         }
+        SolzBot.getInstance().getJda().addEventListener(new ReactionAddListener(), new ReactionRemoveListener());
     }
 
     public void addReactionRole(TextChannel textChannel, Emoji emote, Role role) {
@@ -73,24 +73,68 @@ public class ReactionRoles {
         save();
     }
 
-    public void removeReactionRole(TextChannel textChannel, Emoji emote, Role role) {
+    public void removeReactionRole(TextChannel textChannel, Emoji emote) {
         if (!reactionRolesMap.containsKey(textChannel.getIdLong())) {
             return;
         }
 
         if (emote.isCustom()) {
             ReactionChannel.CompactEmoji compactEmoji = new ReactionChannel.CompactEmoji(false, "", emote.getIdLong());
-            Long roleId = role.getIdLong();
-
             reactionRolesMap.get(textChannel.getIdLong()).removeReactionRole(compactEmoji);
         } else {
             ReactionChannel.CompactEmoji compactEmoji = new ReactionChannel.CompactEmoji(true, EmojiManager.getByUnicode(emote.getName()).getUnicode(), 0L);
-            Long roleId = role.getIdLong();
-
             reactionRolesMap.get(textChannel.getIdLong()).removeReactionRole(compactEmoji);
         }
 
         save();
+    }
+
+    public void handleReactionAdd(Member member, MessageReaction.ReactionEmote emoji, TextChannel textChannel) {
+        ReactionChannel reactionChannel = null;
+        ReactionChannel.CompactEmoji compactEmoji = null;
+
+        if (reactionRolesMap.containsKey(textChannel.getIdLong())) {
+            reactionChannel = reactionRolesMap.get(textChannel.getIdLong());
+            if (emoji.isEmote()) {
+                compactEmoji = new ReactionChannel.CompactEmoji(false, "", emoji.getIdLong());
+            } else {
+                compactEmoji = new ReactionChannel.CompactEmoji(true, EmojiManager.getByUnicode(emoji.getEmoji()).getUnicode(), 0L);
+            }
+        }
+
+        if (reactionChannel != null && reactionChannel.getReactionRolesMap().get(compactEmoji) != null) {
+            long roleId = reactionChannel.getReactionRolesMap().get(compactEmoji);
+
+            Role role = SolzBot.getInstance().getJda().getRoleById(roleId);
+
+            if (role != null) {
+                member.getGuild().addRoleToMember(member, role).queue();
+            }
+        }
+    }
+
+    public void handleReactionRemove(Member member, MessageReaction.ReactionEmote emoji, TextChannel textChannel) {
+        ReactionChannel reactionChannel = null;
+        ReactionChannel.CompactEmoji compactEmoji = null;
+
+        if (reactionRolesMap.containsKey(textChannel.getIdLong())) {
+            reactionChannel = reactionRolesMap.get(textChannel.getIdLong());
+            if (emoji.isEmote()) {
+                compactEmoji = new ReactionChannel.CompactEmoji(false, "", emoji.getIdLong());
+            } else {
+                compactEmoji = new ReactionChannel.CompactEmoji(true, EmojiManager.getByUnicode(emoji.getEmoji()).getUnicode(), 0L);
+            }
+        }
+
+        if (reactionChannel != null && reactionChannel.getReactionRolesMap().get(compactEmoji) != null) {
+            long roleId = reactionChannel.getReactionRolesMap().get(compactEmoji);
+
+            Role role = SolzBot.getInstance().getJda().getRoleById(roleId);
+
+            if (role != null) {
+                member.getGuild().removeRoleFromMember(member, role).queue();
+            }
+        }
     }
 
     private void save() {
